@@ -20,7 +20,9 @@ namespace {
 
     Source* initializeSourcePeer(mbgl::style::Source& coreSource) {
         Source* source;
-        if (coreSource.is<mbgl::style::VectorSource>()) {
+        if (coreSource.peer.has_value()) {
+            source = mbgl::util::any_cast<std::unique_ptr<Source>>(&coreSource.peer)->get();
+        } else if (coreSource.is<mbgl::style::VectorSource>()) {
             source = new VectorSource(*coreSource.as<mbgl::style::VectorSource>());
         } else if (coreSource.is<mbgl::style::RasterSource>()) {
             source = new RasterSource(*coreSource.as<mbgl::style::RasterSource>());
@@ -43,7 +45,7 @@ namespace android {
 jni::jobject* createJavaSourcePeer(jni::JNIEnv& env, AndroidRendererFrontend& frontend, mbgl::style::Source& coreSource) {
     std::unique_ptr<Source> peerSource = std::unique_ptr<Source>(initializeSourcePeer(coreSource));
     peerSource->setRendererFrontend(frontend);
-    jni::jobject* result = peerSource->createJavaPeer(env);
+    jni::jobject* result = peerSource->getJavaPeer(env);
     peerSource.release();
     return result;
 }
